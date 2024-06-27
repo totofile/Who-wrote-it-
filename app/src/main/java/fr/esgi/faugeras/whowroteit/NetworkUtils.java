@@ -10,53 +10,62 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
+// Classe utilitaire pour gérer les requêtes réseau à l'API Google Books
 public class NetworkUtils {
+    // Constantes pour la construction de l'URL de la requête
     private static final String LOG_TAG = NetworkUtils.class.getSimpleName();
-    // URL de base pour le Books API.
     private static final String BOOK_BASE_URL = "https://books.googleapis.com/books/v1/volumes?";
-    // Paramètre pour la chaîne de recherche.
     private static final String QUERY_PARAM = "q";
-    // Paramètre qui limite les résultats de la recherche.
     private static final String MAX_RESULTS = "maxResults";
-    // Paramètre pour filtrer par type de publication.
     private static final String PRINT_TYPE = "printType";
+
+    // Méthode pour obtenir les informations sur un livre à partir de l'API Google Books
     static String getBookInfo(String queryString){
         HttpURLConnection urlConnection = null;
         BufferedReader reader = null;
         String bookJSONString = null;
 
-
         try {
+            // Construction de l'URL de la requête
             Uri builtURI = Uri.parse(BOOK_BASE_URL).buildUpon()
                     .appendQueryParameter(QUERY_PARAM, queryString)
                     .appendQueryParameter(MAX_RESULTS, "10")
                     .appendQueryParameter(PRINT_TYPE, "books")
                     .build();
+
             URL requestURL = new URL(builtURI.toString());
+
+            // Ouverture de la connexion à l'URL
             urlConnection = (HttpURLConnection) requestURL.openConnection();
             urlConnection.setRequestMethod("GET");
             urlConnection.connect();
-            // Récupère le InputStream.
+
+            // Lecture de la réponse de l'API
             InputStream inputStream = urlConnection.getInputStream();
-            // Crée un lecteur tamponné à partir de ce flux d'entrée.
             reader = new BufferedReader(new InputStreamReader(inputStream));
-            // Utilisez un StringBuilder pour contenir la réponse entrante.
             StringBuilder builder = new StringBuilder();
+
             String line;
             while ((line = reader.readLine()) != null) {
                 builder.append(line);
-            // Puisqu'il s'agit de JSON, l'ajout d'une nouvelle ligne n'est pas nécessaire
-            // (cela n'affectera pas l'analyse) mais cela facilite grandement le débogage
-            // si vous affichez le buffer entier pour le débogage.
                 builder.append("\n");
             }
+
+            // Si la réponse est vide, retourne null
             if (builder.length() == 0) {
                 return null;
             }
-            bookJSONString = builder.toString(); // Assign the built string to bookJSONString
-        } catch (IOException e) {
+
+            // Conversion de la réponse en chaîne de caractères
+            bookJSONString = builder.toString();
+            // Log de la réponse
+            Log.d(LOG_TAG, bookJSONString);
+
+        } catch (IOException e){
+            // Gestion des exceptions
             e.printStackTrace();
         } finally {
+            // Fermeture de la connexion et du reader
             if (urlConnection != null) {
                 urlConnection.disconnect();
             }
@@ -67,12 +76,11 @@ public class NetworkUtils {
                     e.printStackTrace();
                 }
             }
-            // Écrit la réponse JSON finale dans le journal
-            if(bookJSONString != null) {
-                Log.d(LOG_TAG, bookJSONString);
-            }
+
         }
 
+        // Retour de la réponse de l'API
         return bookJSONString;
     }
+
 }
